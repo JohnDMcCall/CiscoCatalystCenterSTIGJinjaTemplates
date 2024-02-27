@@ -1,0 +1,66 @@
+{#
+    template is built for IOS-XE devices under the "Switches and Hubs" device category
+    Within DNA/Catalyst Center this is the only template that should be assigned to sites
+
+    Template was made in an SDA environment using 9500s and 9300s, slight syntax errors may exist even within that family
+#}
+
+{# include statements for various libraries #}
+{% incldue "Library Repository/Variable Library" %} {# Library to store derived variables that require some programmatic logic to establish #}
+{% incldue "Library Repository/Macro Library" %} {# Library to store various macros #}
+{% include "Library Repository/Static IP Library" %} {# Library to store devices that have static IPs and run afowl of the `ip source verify` STIG on access interfaces #}
+{% include "Library Repository/ACL Library" %} {# Library to store ACL definitions #}
+
+{# include statements for STIG Conpliance Templates #}
+{% include "Configuration Templates/IOS XE Switch Non-STIG Configuration" %} {# Any configuration on devices that are not defined in a STIG but are configured on the device #}
+{% include "Configuration Templates/Cisco IOS XE Router NDM STIG - Switch" %}
+{% include "Configuration Templates/Cisco IOS XE Router RTR STIG - Switch" %}
+{% include "Configuration Templates/Cisco IOS XE Switch L2S STIG - Switch" %}
+
+{#
+    Variable Library is used to store variables such as hostname or interface_dict
+    Please look at that library if making changes to variable logic within this template
+#}
+
+{# Macro Library #}
+{{ start_countdown() }} {# Begins a 15 minute countdown that if the template errors the device will be rollbacked to the state before custom templates were applied #}
+
+{% if hostname %} {# hostname is defined in Variable Library, if statement is not needed logically but DNAC will throw a parsing error when performing a static code review while committing #}
+{% set include_device_config = sitename + " Infrastructure as Code/" + hostname %} {# resolves to "SITE01 Infrastructure as Code/SITE01-0001-001BCN01" or any other hostname #}
+{% set include_site_config = sitename + " Infrastructure as Code/AREA-VARIABLES" %} {# Used AREA instead of SITE so that it appears alphabetically above most device templates #}
+{% include include_device_config %} {# include statement does not parse the string joins correctly, but can use an already set variable - which is why we defined the strings above #}
+{% include include_site_config %}
+{% endif %}
+
+{#
+    For the below section - device_model and device_role are defined within the Variable Library, while site_dictionary is defined within AREA-VARIABLES
+#}
+{# Configuration Templates/IOS XE Switch Non-STIG Configuration #}
+{{ non_stig_config(device_model, device_role, site_dictionary) }}
+{# Configuration Templates/Cisco IOS XE Router NDM STIG - Switch #}
+{{ router_ndm_config(device_model, device_role, site_dictionary) }}
+{# Configuration Templates/Cisco IOS XE Router RTR STIG - Switch #}
+{{ router_rtr_config(device_model, device_role, site_dictionary) }}
+{# Configuration Templates/Cisco IOS XE Switch L2S STIG - Switch #}
+{{ switch_l2s_config(device_model, device_role, site_dictionary) }}
+
+{#
+    The 'sitename + " Infrastructure as Code/" + hostname' file contains the manual_ints dictionary, while the interface_dict and device_role are defined within the variable library
+#}
+{% if device_role == 'FEN' %}
+    {# Static IP Library #}
+    {{ check_static_ip() }}
+    {# Macro Library #}
+    {{ isis_no_bgp() }}
+    {{ interface_loop_fabric_edge (interface_dict, manual_ints, device_model) }}
+{% elif device_role == 'INT' %}
+    {{ isis_no_bgp }}
+    {{ interface_loop_intermediate(interface_dict, manual_ints, device_model) }}
+{% elif device_role == 'BCN' %}
+    {{ border_control_bgp_config(bgp_config) }} {# bgp_config also in IaC folder #}
+    {{ isis_with_bgp() }}
+    {{ interface_loop_border_control(interface_dict, manual_ints, device_model) }}
+{% endif %}
+
+{# Macro Library #}
+{{ end_countdown() }}

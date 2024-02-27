@@ -1,0 +1,18 @@
+{#
+    The below assumes a 6 character sitecode with a 20 character hostname, adjustments will likely be needed depending on environment
+#}
+
+{% set hostname = __device.hostname | truncate(20, true, '') %}
+{% set sitename = hostname | truncate(6, true, '') %}
+{% set interface_dict = __interface %} {# created this because passing __interface directly to a macro had inconsistent results #}
+{% set device_model = __device.platformId %}
+
+{# DNAC throws parsing errors when interacting with dirivatives of the __device variables, to avoid these the below has to be done #}
+
+{% set device_role = [] %}
+
+{% if hostname %}
+    {% set ephemeral = device_role.append(hostname[15:18])%}
+{% endif %}
+
+{% set device_role = device_role[0] %}
