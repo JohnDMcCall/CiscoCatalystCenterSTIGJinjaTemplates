@@ -1,7 +1,7 @@
 {% macro start_countdown() %}
 #MODE_ENABLE
 #INTERACTIVE
-copy running-config flash:DNACPreTemplateBackup<IQ>Destination filename <R><IQ>over write?<R>
+copy running-config flash:DNACPreTemplateBackup<IQ>Destination filename<R><IQ>over write?<R>
 #ENDS_INTERACTIVE
 configure replace flash:DNACPreTemplateBackup force time 15
 #MODE_END_ENABLE
