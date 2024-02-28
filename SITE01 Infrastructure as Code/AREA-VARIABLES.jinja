@@ -1,0 +1,22 @@
+{% set site_dictionary = {
+    'dhcp': {
+        'network': '198.51.100.0',
+        'subnet': '255.255.255.192',
+        'router': '198.51.100.1'
+    },
+    'ntp': {
+        'primary_ntp_server': '203.0.113.5',
+        'secondary_ntp_servers': [
+            '203.0.113.10',
+            '203.0.113.15'
+        ]
+    },
+    'logging': {
+        'logging_servers': [
+            '203.0.113.20',
+            '203.0.113.25'
+        ],
+        'logging_port': '514'
+    }
+}
+%}

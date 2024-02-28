@@ -1,0 +1,33 @@
+{# In the case of FENs that may be isolted from the underlay network isis_enabled could be set to false with static routes pointing to both BCN loopbacks #}
+{% set isis_enabled = true %}
+
+{# infrastructure/underlay interfaces and loopbacks should be defined here #}
+{% set manual_ints = {
+    'Loopback0': {
+        'ip': '198.51.100.70',
+        'subnet': '255.255.255.255',
+        'description': 'Management Loopback'
+    },
+    'TwentyFiveGigE1/0/1': {
+        'ip': '198.51.100.128',
+        'subnet': '255.255.255.254',
+        'description': 'to-SITE01-0001-001FEN01'
+    },
+    'TwentyFiveGigE1/0/23': {
+        'ip': '198.51.100.135',
+        'subnet': '255.255.255.254',
+        'description': 'to-SITE01-0001-001BCN02'
+    },
+    'TwentyFiveGigE1/0/24': {
+        'ip': '198.51.100.133',
+        'subnet': '255.255.255.254',
+        'description': 'to-SITE01-0001-001BCN01'
+    }
+}
+%}
+
+{# defines the net_id for the switches isis process #}
+{% set isis_config = {
+    'net_id': '49.0000.1980.5110.0070.00'
+}
+%}

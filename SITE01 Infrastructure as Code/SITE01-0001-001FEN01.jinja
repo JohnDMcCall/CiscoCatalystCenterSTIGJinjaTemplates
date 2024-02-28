@@ -1,0 +1,52 @@
+{# In the case of FENs that may be isolted from the underlay network isis_enabled could be set to false with static routes pointing to both BCN loopbacks #}
+{% set isis_enabled = true %}
+
+{# infrastructure/underlay interfaces and loopbacks should be defined here #}
+{% set manual_ints = {
+    'Loopback0': {
+        'ip': '198.51.100.127',
+        'subnet': '255.255.255.255',
+        'description': 'Management Loopback'
+    },
+    'TenGigabitEthernet1/1/1': {
+        'ip': '198.51.100.129',
+        'subnet': '255.255.255.254',
+        'description': 'to-SITE01-0001-001INT01'
+    },
+    'TenGigabitEthernet1/1/2': {
+        'ip': '198.51.100.131',
+        'subnet': '255.255.255.254',
+        'description': 'to-SITE01-0001-001INT02'
+    }
+}
+%}
+
+{# defines the net_id for the switches isis process #}
+{% set isis_config = {
+    'net_id': '49.0000.1980.5110.0127.00'
+}
+%}
+
+{# oobm_ints are interfaces that supply the OOBM Network for devices (Vlan 500 in these templates) - since the connections don't leave the TR most Access Port STIGs are not needed. #}
+{% set oobm_ints = [
+    'GigabitEthernet1/0/3',
+    'GigabitEthernet1/0/4'
+]
+%}
+
+{# Some devices require a static IP and are not able to DHCP, these need to be set here due to the `ip verify source` command being STIG required for all user facing access ports #}
+{% set static_ip_devices = [
+    {
+        "mac_address": "0123.4567.890a",
+        "vlan_id": "100",
+        "ip_address": "192.0.2.2",
+        "interface_name": "GigabitEthernet1/0/48"
+    },
+    {
+        "mac_address": "bcde.f012.3456",
+        "vlan_id": "200",
+        "ip_address": "192.0.2.129",
+        "interface_name": "GigabitEthernet1/0/47"
+    }
+]
+%}

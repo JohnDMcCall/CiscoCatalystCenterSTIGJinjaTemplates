@@ -6,10 +6,9 @@
 #}
 
 {# include statements for various libraries #}
-{% incldue "Library Repository/Variable Library" %} {# Library to store derived variables that require some programmatic logic to establish #}
-{% incldue "Library Repository/Macro Library" %} {# Library to store various macros #}
-{% include "Library Repository/Static IP Library" %} {# Library to store devices that have static IPs and run afowl of the `ip source verify` STIG on access interfaces #}
-{% include "Library Repository/ACL Library" %} {# Library to store ACL definitions #}
+{% incldue "Libraries/Variable Library" %} {# Library to store variables that require extra/ugly processing to set #}
+{% incldue "Libraries/Macro Library" %} {# Library to store various macros #}
+{% include "Libraries/ACL Library" %} {# Library to store ACL definitions #}
 
 {# include statements for STIG Conpliance Templates #}
 {% include "Configuration Templates/IOS XE Switch Non-STIG Configuration" %} {# Any configuration on devices that are not defined in a STIG but are configured on the device #}
@@ -45,20 +44,26 @@
 {{ switch_l2s_config(device_model, device_role, site_dictionary) }}
 
 {#
-    The 'sitename + " Infrastructure as Code/" + hostname' file contains the manual_ints dictionary, while the interface_dict and device_role are defined within the variable library
+    The 'sitename + " Infrastructure as Code/" + hostname' (IaC) file contains the manual_ints dictionary, while the interface_dict and device_role are defined within the variable library
 #}
 {% if device_role == 'FEN' %}
-    {# Static IP Library #}
-    {{ check_static_ip() }}
+    {# Macro Library #}
+    {{ check_static_ip(hostname, static_ip_devices) }} {# static_ip_devices is present in the IaC AREA-VARIABLES template #}
     {# Macro Library #}
     {{ isis_no_bgp() }}
+    {# Macro Library #}
     {{ interface_loop_fabric_edge (interface_dict, manual_ints, device_model) }}
 {% elif device_role == 'INT' %}
-    {{ isis_no_bgp }}
+    {# Macro Library #}
+    {{ isis_no_bgp() }}
+    {# Macro Library #}
     {{ interface_loop_intermediate(interface_dict, manual_ints, device_model) }}
 {% elif device_role == 'BCN' %}
+    {# Macro Library #}
     {{ border_control_bgp_config(bgp_config) }} {# bgp_config also in IaC folder #}
+    {# Macro Library #}
     {{ isis_with_bgp() }}
+    {# Macro Library #}
     {{ interface_loop_border_control(interface_dict, manual_ints, device_model) }}
 {% endif %}
 

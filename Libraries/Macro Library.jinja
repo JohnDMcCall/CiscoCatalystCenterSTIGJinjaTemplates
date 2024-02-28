@@ -12,3 +12,11 @@ configure replace flash:DNACPreTemplateBackup force time 15
 configure confirm
 #MODE_END_ENABLE
 {% endmacro %}
+
+{% macro check_static_ip(hostname, static_ip_devices) %}
+    {% if static_ip_devices %}
+        {% for device in static_ip_devices %}
+            ip source binding {{ mac_address }} vlan {{ vlan_id }} {{ ip_address }} interface {{ interface_name }}
+        {% endfor %}
+    {% endif %}
+{% endmacro %}

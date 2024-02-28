@@ -1,0 +1,77 @@
+{% set isis_enabled = true %}
+
+{# infrastructure/underlay interfaces and loopbacks should be defined here #}
+{% set manual_ints = {
+    'Loopback0': {
+        'ip': '198.51.100.64',
+        'subnet': '255.255.255.255',
+        'description': 'Management Loopback'
+    },
+    'TwentyFiveGigE1/0/1': {
+        'ip': '198.51.100.132',
+        'subnet': '255.255.255.254',
+        'description': 'to-SITE01-0001-001INT01'
+    },
+    'TwentyFiveGigE1/0/45': {
+        'ip': '198.51.100.138',
+        'subnet': '255.255.255.254',
+        'description': 'to-SITE01-0001-001BCN02'
+    },
+    'TwentyFiveGigE1/0/46': {
+        'ip': '198.51.100.136',
+        'subnet': '255.255.255.254',
+        'description': 'to-SITE01-0001-001BCN02'
+    }
+}
+%}
+
+{# defines the net_id for the switches isis process #}
+{% set isis_config = {
+    'net_id': '49.0000.1980.5110.0064.00'
+}
+%}
+
+{% set bgp_config = {
+    'as_number': '65565',
+    'peer_as': '64512',
+    'fabric_vrfs': ['SITE01', 'SITE01_EVOIP'],
+    'neighbors':[
+        {
+            'peer_ip': '198.51.100.140',
+            'description': 'SITE01-0001-001FUS01',
+            'source_interface': 'Vlan4001'
+        },
+        {
+            'peer_ip': '198.51.100.142',
+            'description': 'SITE01-0001-001FUS02',
+            'source_interface': 'Vlan4002'
+        }
+    ],
+    'trunk_interfaces': [
+        {
+            'interface': 'TwentyFiveGigE1/0/48',
+            'description': 'to-SITE01-0001-001FUS01',
+            'allowed_vlan': ['4001', '4011', '4021']
+        },
+        {
+            'interface': 'TwentyFiveGigE1/0/47',
+            'description': 'to-SITE01-0001-001FUS02',
+            'allowed_vlan': ['4002', '4012', '4022']
+        }
+    ],
+    'underlay_vlans': [
+        {
+            'vlan': '4001',
+            'ip': '198.51.100.141',
+            'subnet': '255.255.255.254',
+            'description': 'SITE01-0001-001FUS01'
+        },
+        {
+            'vlan': '4002',
+            'ip': '198.51.100.143',
+            'subnet': '255.255.255.254',
+            'description': 'SITE01-0001-001FUS02'
+        }
+    ]
+}
+%}
