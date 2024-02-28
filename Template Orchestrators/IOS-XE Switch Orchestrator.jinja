@@ -31,6 +31,10 @@
 {% include include_site_config %}
 {% endif %}
 
+{# ACL Updates from ACL Library #}
+{{ ACL_NET_MANAGEMENT() }}
+{{ ACL_SNMP() }}
+
 {#
     For the below section - device_model and device_role are defined within the Variable Library, while site_dictionary is defined within AREA-VARIABLES
 #}
@@ -44,7 +48,8 @@
 {{ switch_l2s_config(device_model, device_role, site_dictionary) }}
 
 {#
-    The 'sitename + " Infrastructure as Code/" + hostname' (IaC) file contains the manual_ints dictionary, while the interface_dict and device_role are defined within the variable library
+    The 'sitename + " Infrastructure as Code/" + hostname' (IaC) file contains the manual_ints dictionary,
+    while the interface_dict and device_role are defined within the variable library
 #}
 {% if device_role == 'FEN' %}
     {# Macro Library #}

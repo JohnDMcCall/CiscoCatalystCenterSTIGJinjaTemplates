@@ -1,0 +1,96 @@
+{% macro non_stig_config(device_model, device_role, site_dictionary) %}
+    {# These commands showed up randomly during an image upgrade and broke the network - explicitly no-ing them out #}
+    no macro auto global processing
+    no device classifier
+
+    {# This should be configured during onboarding but ensuring that this is present - SDA adds overhead so ensuring jumbo frames are supported in the fabric is a must #}
+    system mtu 9100
+
+    {# archive support for countdown macros #}
+    archive
+        path flash:/config_backups
+        write-memory
+        maximum 14
+    
+    service sequence-numbers
+
+    no logging console
+    no logging monitor
+
+    transceiver type all
+        monitoring
+    
+    {# DNAC is in control of most of the AAA configuration, however changing the default exec behavior as that is applied to console access #}
+    aaa authorication exec default local if-authenticated
+
+    ip domain lookup source-interface Loopback0
+    ip http client source-interface Loopback0
+    ip tftp source-interface Loopback0
+    ip tacacs source-interface Loopback0
+    ip ssh source-interface Loopback0
+    ip radius source-interface Loopback0
+    logging source-interface Loopback0
+    snmp-server trap-source Loopback0
+    {# ntp source `Loopback0` - handled in Router NDM STIG NTP section #}
+
+    {# CLEANUP FROM PNP #}
+    default int vlan 1
+
+    int vlan 1
+        shutdown
+    no ip dhcp pool nw_orchestration_pool
+    no ip dhcp class ciscopnp
+    no pnp profile pnp-zero-touch
+    vlan 1000
+        name UNUSED_INTERFACES
+        state suspend
+        shutdown
+
+    {% if device_role = 'FEN' %}
+        vlan 2045
+            name PARKING_LOT
+            state active
+            no shutdown
+        
+        template STORM_REMOVAL {# Intended to be used with ISE/Radius to remove storm removal for approved devices such as HAIPE #}
+            storm-control broadcast level bps 10g
+            storm-control multicast level bps 10g
+            storm-control unicast level bps 10g
+    {% endif %}
+
+    {% if device_role == 'INT' or device_role == 'BCN' %}
+        event manager applet onboarding_dhcp_provision authorization bypass
+            event none
+            action 1.0 cli command "enable"
+            action 1.1 cli command "configure terminal"
+            action 1.2 cli command "ip dhcp pool nw_orchestration_pool"
+            action 1.3 cli command "network {{ site_dictionary['dhcp']['network'] }} {{ site_dictionary[dhcp]['subnet'] }}"
+            action 1.4 cli command "option 43 ascii 5A1D;B2;K4;I203.0.113.65;J80;"
+            action 1.5 cli command "default-router {{ site_dictionary['dhcp']['router'] }}"
+            action 1.6 cli command "class ciscopnp"
+            action 1.7 cli command "ip dhcp class ciscopnp"
+            action 1.8 cli command "option 60 ^ciscopnp"
+            action 2.0 cli command "vlan 1"
+            action 2.1 cli command "interface Vlan1"
+            action 2.2 cli command "ip address {{ site_dictionary['dhcp']['router'] }} {{ site_dictionary[dhcp]['subnet'] }}"
+            action 2.3 cli command "no shutdown"
+            action 2.4 cli command "ip router isis"
+            action 2.5 cli command "clns mtu 1400"
+            action 2.6 cli command "bfd interface 500 min_rx 500 multiplier 3"
+            action 2.7 cli command "no ip redirects"
+            action 3.0 cli command "no spanning-tree loopguard default"
+            {% if device_model == 'C9500X'%}
+            action 3.1 cli command "spanning-tree portfast default"
+            action 3.2 cli command "no spanning-tree portfast bpduguard default"
+            {% else %}
+            action 3.1 cli command "spanning-tree portfast edge default"
+            action 3.2 cli command "no spanning-tree portfast bpduguard edge default"
+            {% endif %}
+            action 4.0 cli command "do wr"
+    {% endif %}
+
+    {% for server in site_dictionary['logging']['logging_servers'] %}
+        logging host {{ server }} transport tcp port {{ site_dictionary['logging']['logging_port'] }}
+    {% endfor %}
+
+{% endmacro %}

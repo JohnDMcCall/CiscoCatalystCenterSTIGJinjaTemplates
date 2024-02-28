@@ -1,0 +1,24 @@
+{% macro ACL_NET_MANAGEMENT() %}
+no ip access-list standard ACL_NET_MANAGEMENT
+
+ip access-list standard ACL_NET_MANAGEMENT
+remark ==AdminSubnet==
+permit 192.0.2.192 0.0.0.7
+rmark ==DNAC==
+permit 203.0.113.64 0.0.0.7
+remark ==Pollers==
+permit 203.0.113.250
+permit 203.0.113.251
+deny any log
+{% endmacro %}
+
+{% macro ACL_SNMP() %}
+no ip access-list standard ACL_SNMP
+
+ip access-list standard ACL_SNMP
+remark ==SNMPPoller==
+permit 203.0.113.13
+remark ==DNAC==
+permit 203.0.113.64 0.0.0.7
+deny any log
+{% endmacro %}
