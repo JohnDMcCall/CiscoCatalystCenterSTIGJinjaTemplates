@@ -89,8 +89,4 @@
             action 4.0 cli command "do wr"
     {% endif %}
 
-    {% for server in site_dictionary['logging']['logging_servers'] %}
-        logging host {{ server }} transport tcp port {{ site_dictionary['logging']['logging_port'] }}
-    {% endfor %}
-
 {% endmacro %}

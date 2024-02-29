@@ -1,3 +1,168 @@
 {% macro router_ndm_config(device_model, device_role, site_dictionary) %}
+    {# CISC-ND-000010 #}
+    ip http secure-server
+    ip http max-connections 10
+    {# CISC-ND-000090, CISC-ND-000100, CISC-ND-000110, CISC-ND-000120, CISC-ND-000330, CISC-ND-000880, CISC-ND-001250, CISC-ND-001270 #}
+    archive
+        log config
+        logging enable
+    {# CISC-ND-000140 #}
+    line vty 0 4
+        access-class ACL_NET_MANAGEMENT vrf-also in
+    {% if '9300' in device_model %}
+        line vty 5 31
+            session-timeout 5
+            exec-timeout 5 0
+            no exec
+            transport input none
+            transport output none
+    {% else %}
+        line vty 5 15
+            session-timeout 5
+            exec-timeout 5 0
+            no exec
+            transport input none
+            transport output none
+    {% endif %}
+    {# CISC-ND-000150 #}
+    login block-for 900 attempts 3 within 120
+    {# CISC-ND-000160 #}
+    {# <MLTCMD specifies to DNA Center that this single command spans multiple lines #}
+<MLTCMD>banner login #
+You are accessing a U.S. Government (USG) Information System (IS)
+that is provided for USG-authorized use only. By using this IS
+(which includes any device attached to this IS),
+you consent to the following conditions:
 
+-The USG routinely intercepts and monitors communications on this
+IS for purposes included, but not limited to, penetration testing,
+COMSEC monitoring, network operations and defense, personnel
+misconduct (PM), law enforcement (LE), and counterintelligence
+(CI) investigations.
+
+-At any time, the the USG may inspect and seize data stored on this IS.
+
+-Communications using, or data stored on, this IS are not private,
+are subject to routine monitoring, interception, and search, and may
+be disclosed or used for any USG-authorized purpose.
+
+-This IS includes security measures (e.g., authentication and access
+controls) to protect USG intersts--no for your personal benefit or
+privacy.
+
+-Notwithstanding the above, using this IS does not constitute consent
+to PM, LE, or CI investigative searching or monitoring of the content
+of privileged communications, or work product, related to personal
+representation or services by attorneys, psychotherapists, or clergy,
+and their assistants. Such communications and work product are private
+and confidential. See User Agreement for details.#
+</MLTCMD>
+    {# CISC-ND-000210 #}
+    logging userinfo
+    {# CISC-ND-000280 #}
+    service timestamps log datetime localtime
+    {# CISC-ND-000290 #}
+    {# ACLs already applied earlier #}
+    {# removing DNAC created WEBAUTH_REDIRECT as DNAC changes sequence numbers randomly and it is not needed #}
+    no ip access-list extended ACL_WEBAUTH_REDIRECT
+    {# CISC-ND-000380, CISC-ND-000390, CISC-ND-000460 #}
+    {# configured by default reapplying for sanity #}
+    file privilege 15
+    {# CISC-ND-000470 #}
+    {# no boot network - legacy command, all devices I've configured no longer have this #}
+    no ip boot server
+    no ip bootp server
+    no ip dns server
+    {# no ip identd - legacy command, all devices I've configured no longer have this #}
+    no ip finger
+    no ip http server
+    no ip rcmd rcp-enable
+    no ip rcmd rsh-enable
+    no service config
+    no service finger
+    no service tcp-small-servers
+    no service udp-small-servers
+    no service pad
+    {# since call-home is reapplied on a reboot removing it via a countdown timer that would apply on reboots #}
+    event manager applet no_call_home authorization bypass
+        event timer countdown time 900
+        action 1.0 cli command "enable"
+        action 1.1 cli command "configure terminal"
+        action 1.2 cli command "no service call-home"
+        action 1.3 cli command "no call-home"
+        action 1.4 cli command "do wr"
+    {# CISC-ND-000490, CISC-ND-001370 #}
+    {# AAA is controlled via DNAC and should have limited modifications #}
+    username dnacadmin priv 15 common-criteria-policy PASSWORD_POLICY secret 9 <enteryourownpasswordhere>
+    {# STIG specifies that only one account can be configured, but it would be practical to create a non-service account for console access and keep the DNAC account more controlled #}
+    {# CISC-ND-000550, CISC-ND-000570, CISC-ND-000580, CISC-ND-000590, CISC-ND-000600, CISC-ND-000610 #}
+    aaa common-criteria policy PASSWORD_POLICY
+        min-length 15
+        upper-case 1
+        lower-case 1
+        numeric-count 1
+        special-case 1
+        char-changes 8
+    {# CISC-ND-000620 #}
+    service password-encyption
+    {# CISC-ND-000720 #}
+    ip http timeout-policy idle 600 life 600 requests 60
+    line con 0
+        exec timeout 5 0
+    line vty 0 5
+        exec timeout 5 0
+    {# CISC-ND-000980 #}
+    logging buffered 640000 debug
+    {# CISC-ND-001000 #}
+    logging trap informational
+    {# CISC-ND-001030 #}
+    {# DNAC Defined NTP Servers #}
+    {# CISC-ND-001130, CISC-ND-001140 #}
+    {# DNAC Defined SNMP AUTHENTICATION #}
+    {# CISC-ND-001150 #}
+    no ntp
+    ntp authentication-key {{ site_dictionary['ntp']['ntp_key_id'] }} md5 {{ site_dictionary['ntp']['ntp_key_hash'] }}
+    ntp authenticate
+    ntp trusted-key {{ site_dictionary['ntp']['ntp_key_id'] }}
+    ntp source Loopback0
+    ntp server {{ site_dictionary['ntp']['primary_ntp_server'] }} key {{ site_dictionary['ntp']['ntp_key_id'] }} prefer
+    {% for server in site_dictionary['ntp']['decondary_ntp_servers'] %}
+        ntp server {{ server }} key {{ site_dictionary['ntp']['ntp_key_id'] }}
+    {% endfor %}
+    {# CISC-ND-001200 #}
+    ip ssh version 2
+    ip ssh server algorithm mac hmac-sha2-256
+    {# CISC-ND-001210 #}
+    ip ssh server algorithm sncryption aes256-ctr aes192-ctr aes128-ctr
+    {# CISC-ND-001220 #}
+    {# Handled by DNAC - additionally Check is N/A if IOS XE is 17+ #}
+    {# CISC-ND-001260 #}
+    login on-failure log
+    login on-success log
+    {# CISC-ND-001370 #}
+    {# DNAC DEFAULT AAA CONFIG #}
+    ip http authentication aaa login-authentication VTY_authen
+    {# CISC-ND-001410 #}
+    {# DNAC automatically tracks config drift so configuration does not need to be present on the device #}
+    {# CISC-ND-001440 #}
+    {#
+        crypto pki trustpoint CA_1
+            enrollment terminal
+            revocation-check ocsp
+            ocsp url http://verysecure.server.mil:80
+            no authorication list dnac-cts-list
+            authorication username subjectname commonname
+        
+        crypto pki certificat chain CA_1
+            certificate ca 01
+                <HEX FORMAT CERTIFICATE>
+                quit
+    #}
+    {# CISC-ND-001450 #}
+    {# DNAC is configured as a logging server by default, but AREA-VARIABLES is where you would configure actual log servers #}
+    {% for server in site_dictionary['logging']['logging_servers'] %}
+        logging host {{ server }} transport tcp port {{ site_dictionary['logging']['logging_port'] }}
+    {% endfor %}
+    {# CISC-ND-001470 #}
+    {# DNAC's Software Management is very good and onboarding devices via PNP automatically updates them to the set golden image #}
 {% endmacro %}

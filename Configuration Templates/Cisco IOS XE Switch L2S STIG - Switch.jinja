@@ -1,0 +1,58 @@
+{% macro switch_l2s_config(device_model, device_role, site_dictionary) %}
+    {# CISC-L2-000010 #}
+    {#Handled already in Router NDM STIG Template #}
+    {# CISC-L2-000020 #}
+    {# Handled by DNAC #}
+    {# CISC-L2-000030 #}
+    vtp mode off
+    {# CISC-L2-000040 #}
+    {# APP-QOS Deployed via DNAC Wizards #}
+    {# CISC-L2-000060, CISC-L2-000070 #}
+    {# monitor sessions should be able to be made on any modern switch #}
+    {# CISC-L2-000080 #}
+    {# Handled by DNAC #}
+    {# CISC-L2-000090 #}
+    {# Stepping through interfaces is applied in its own Macro #}
+    {# CISC-L2-000100 #}
+    {% if '9500' in device_model and not device_model == 'C9500-40X' %}
+        spanning-tree portfast edge default
+        spanning-tree portfast edge bpduguard default
+    {% else %}
+        spanning-tree portfast default
+        spanning-tree portfast bpduguard default
+    {# CISC-L2-000110 #}
+    spanning-tree mode rapid-pvst
+    spanning-tree loopguard default
+    {# CISC-L2-000120 #}
+    {# Stepping through interfaces is applied in its own Macro #}
+    {# CISC-L2-000130 #}
+    {% if device_role == 'FEN' %}
+        ip dhcp snooping vlan 1-4094
+        ip dhcp snooping
+    {% endif %}
+    {# CISC-L2-000140 #}
+    {# Stepping through interfaces is applied in its own Macro #}
+    {# CISC-L2-000150 #}
+    {# 802.1x is enabled, check is N/A #}
+    {# CISC-L2-000160 #}
+    {# Stepping through interfaces is applied in its own Macro #}
+    {# CISC-L2-000170 #}
+    {# 802.1x is enabled, check is N/A #}
+    {# CISC-L2-000180 #}
+    {# Within SDA, VLANs are assigned on a switch with an Anycast gateway and are not trunked anywhere, check is N/A #}
+    {# CISC-L2-000190 #}
+    udld aggressive
+    udld recovery interval 600
+    {# CISC-L2-000200 #}
+    {# N/A #}
+    {# CISC-L2-000210, CISC-L2-000220, CISC-L2-000270 #}
+    {# Stepping through interfaces is applied in its own Macro #}
+    {# CISC-L2-000230 #}
+    {# N/A #}
+    {# CISC-L2-000240 #}
+    {# N/A #}
+    {# CISC-L2-000250 #}
+    {# N/A #}
+    {# CISC-L2-000260 #}
+    {# N/A #}
+{% endmacro %}

@@ -1,0 +1,9 @@
+{% macro router_rtr_config(device_model, device_role, site_dictionary) %}
+    {# CISC-RT-000150 #}
+    no ip gratuitous-arps
+    {# CISC-RT-000240 #}
+    {% if 'C9200CX' in device_model or 'C9500' in device_model and not 'C9500-40X' in device_model %}
+        line aux 0
+            no exec
+    {% endif %}
+{% endmacro %}
